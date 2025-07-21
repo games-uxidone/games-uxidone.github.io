@@ -198,11 +198,22 @@
             font-weight: bold;
             transition: all 0.3s;
             box-shadow: 0 4px 8px rgba(210, 51, 105, 0.3);
+            margin: 5px;
         }
         
         .btn:hover {
             background: var(--dark);
             transform: translateY(-3px);
+        }
+        
+        .btn-win {
+            background: var(--accent);
+            color: var(--dark);
+            font-weight: bold;
+        }
+        
+        .btn-win:hover {
+            background: #ffd700;
         }
         
         .confetti {
@@ -275,9 +286,21 @@
             background: linear-gradient(270deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
             background-size: 400% 400%;
         }
+        
+        .win-now-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 90;
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <div class="win-now-container" id="win-now-container">
+        <button class="btn btn-win" id="win-now-btn">WIN NOW!</button>
+    </div>
+    
     <div class="header">
         <img src="https://assets-uxidone.github.io/assets/404_error_logo_no_text_black.png" alt="Logo" class="logo">
         <h1>Daudz Laimes Spēle</h1>
@@ -304,6 +327,7 @@
                 <p>Jūs esat vislabākās! ❤️</p>
             </div>
             <button class="btn" onclick="resetGame()">Spēlēt vēlreiz</button>
+            <button class="btn btn-win" onclick="shareWin()">Dalīties</button>
         </div>
     </div>
     
@@ -339,11 +363,25 @@
             secretUnlocked: false
         };
         
+        // Check if secret URL parameters are present
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSecretMode = urlParams.has('code') && urlParams.has('MLQT') && urlParams.has('then') && urlParams.has('do-secret');
+        
         // Initialize game
         function initGame() {
             shuffleCards();
             renderBoard();
             updateStats();
+            
+            if (isSecretMode) {
+                activateSecretFeatures();
+            }
+        }
+        
+        // Activate secret features
+        function activateSecretFeatures() {
+            document.getElementById('win-now-container').style.display = 'block';
+            document.body.classList.add('secret-mode');
         }
         
         // Shuffle cards using Fisher-Yates algorithm
@@ -497,6 +535,11 @@
             initGame();
         }
         
+        // Share win
+        function shareWin() {
+            alert('Dalies ar savu uzvaru ar draugiem! Kopā svinēsim Līgas un Marijas dzimšanas dienu! 🎉');
+        }
+        
         // Secret code functions
         function showCodeInput() {
             document.getElementById('code-input').style.display = 'block';
@@ -516,10 +559,28 @@
         function activateSecretMode() {
             gameState.secretUnlocked = true;
             document.body.classList.add('secret-mode');
-            setTimeout(() => {
-                window.location.href = 'https://games-uxidone.github.io/games/memorygame/?code=used&MLQT&then&do-secret';
-            }, 3000);
+            document.getElementById('win-now-container').style.display = 'block';
         }
+        
+        // Win Now button functionality
+        document.getElementById('win-now-btn').addEventListener('click', function() {
+            // Flip all cards to reveal matches
+            const cards = document.querySelectorAll('.memory-card:not(.matched)');
+            cards.forEach(card => {
+                card.classList.add('flip');
+                setTimeout(() => {
+                    card.classList.add('matched');
+                    card.removeEventListener('click', flipCard);
+                }, 500);
+            });
+            
+            // Update game state
+            gameState.pairsFound = cardContents.length;
+            updateStats();
+            
+            // Show win screen after animation
+            setTimeout(showWinScreen, 1000);
+        });
         
         // Initialize game on load
         window.onload = initGame;
